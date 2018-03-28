@@ -158,8 +158,11 @@ if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif');
         fclose(fp);
         display('Finished reading images')
 elseif strcmpi(ext,'.hdf5') || strcmpi(ext,'.h5');
-    info = hdf5info(path_to_file);
-    dims = info.GroupHierarchy.Datasets.Dims;
+%     info = hdf5info(path_to_file);
+%     dims = info.GroupHierarchy.Datasets.Dims;
+    info = h5info(path_to_file);
+    movind = cellfun(@(x) strcmp(x,'mov'),{info.Datasets.Name});
+    dims = info.Datasets(movind).Dataspace.Size;
     if nargin < 2
         sframe = 1;
     end
@@ -167,6 +170,8 @@ elseif strcmpi(ext,'.hdf5') || strcmpi(ext,'.h5');
         num2read = dims(end)-sframe+1;
     end
     num2read = min(num2read,dims(end)-sframe+1);
+%     [ones(1,length(dims)-1),sframe]
+%     [dims(1:end-1),num2read]
     imData = h5read(path_to_file,'/mov',[ones(1,length(dims)-1),sframe],[dims(1:end-1),num2read]);
 else
     error('Unknown file extension. Only .tiff and .hdf5 files are currently supported');

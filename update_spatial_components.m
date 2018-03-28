@@ -31,10 +31,18 @@ function [A,b,C,P] = update_spatial_components(Y,C,f,A_,P,options)
 
 warning('off', 'MATLAB:maxNumCompThreads:Deprecated');
 memmaped = isobject(Y);
+h5 = ischar(Y);
 if memmaped
     sizY = size(Y,'Y');
     d = prod(sizY(1:end-1));
     T = sizY(end);
+elseif h5
+    tmp = h5info(Y);
+    movind = cellfun(@(x) strcmp(x,'mov'),{tmp.Datasets.Name});
+    sizY = tmp.Datasets(movind).Dataspace.Size;
+    d = prod(sizY(1:end-1));
+    T = sizY(end);
+   
 else
     [d,T] = size(Y);
 end
@@ -105,6 +113,22 @@ if tsub ~= 1 % downsample data
             Y_ds.Yr(i:min(i+step_size-1,d),:) = squeeze(Yt_ds);
             options.sn(i:min(i+step_size-1,d)) = get_noise_fft(Yt_ds);
         end
+    elseif h5 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        Y_ds = matfile('Y_ds.mat','Writable',true);
+        Y_ds.Yr(d,T) = double(0);
+        options.sn = zeros(d,1);
+        step_size = 2e4;
+        for i = 1:step_size:d
+            rcount = min(i+step_size-1,d) - i +1;
+            Ytemp = h5read(Y,'/Yr',[i 1],[rcount sizY(end)]);
+            size(Ytemp)
+%             Ytemp = double(Y.Yr(i:min(i+step_size-1,d),:));
+            
+            Yt_ds = mean(reshape(Ytemp(:,1:Ts*tsub),[],tsub,Ts),2);
+            Y_ds.Yr(i:min(i+step_size-1,d),:) = squeeze(Yt_ds);
+            options.sn(i:min(i+step_size-1,d)) = get_noise_fft(Yt_ds);
+        end
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     else
         Y_ds = squeeze(mean(reshape(Y(:,1:Ts*tsub),[],tsub,Ts),2));
         options.sn = get_noise_fft(Y_ds);
@@ -127,6 +151,9 @@ if strcmpi(options.spatial_method,'constrained');
         for nthr = 1:Nthr     
             if memmaped
                 Ytemp = double(Y_ds.Yr(indeces(nthr)+1:indeces(nthr+1),:));
+            elseif h5
+                rcount = indeces(nthr+1)-indeces(nthr) +1;
+                Ytemp = h5read(Y_ds,'/Yr',[indeces(nthr) 1],[rcount sizY(end)]);
             else
                 Ytemp = Y_ds(indeces(nthr)+1:indeces(nthr+1),:);                
             end

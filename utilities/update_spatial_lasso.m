@@ -20,7 +20,7 @@ function [A,C] = update_spatial_lasso(Y, A, C, IND, sn, q, maxIter, options)
 %% options for HALS
 
 memmaped = isobject(Y);
-
+h5 = ischar(Y);
 %norm_C_flag = false;
 tol = 1e-3;
 repeat = 1;
@@ -53,6 +53,15 @@ if memmaped
     step_size = 2e4;
     for t = 1:step_size:d
         YC(t:min(t+step_size-1,d),:) = (double(Y.Yr(t:min(t+step_size-1,d),:))*C').*IND(t:min(t+step_size-1,d),:);        
+    end
+    
+elseif h5
+    step_size = 2e4;
+    for t = 1:step_size:d
+       rcount  = min(t+step_size-1,d) - t +1;
+       tmpYr = h5read(Y,'/Yr',[t 1],[rcount T]);
+%        size(tmpYr)
+       YC(t:min(t+step_size-1,d),:) = (tmpYr*C').*IND(t:min(t+step_size-1,d),:);  
     end
 else    
     YC = double(mm_fun(C,Y));

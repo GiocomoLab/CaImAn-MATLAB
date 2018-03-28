@@ -43,7 +43,8 @@ else
 end
 
 memmaped = isobject(data);
-if ~memmaped
+h5 = ischar(data); % MP 3/21/18
+if ~memmaped && ~h5
     Y = data;
     clear data;  % TODO check if necessary
     sizY = size(Y);
@@ -60,6 +61,14 @@ if ~memmaped
     else
         data = single(Yr);
     end
+%%%%%%%%%%%%%%%%%%%% MP 3/21/18
+elseif h5
+    tmp = h5info(data);
+    movind = cellfun(@(x) strcmp(x,'mov'),{tmp.Datasets.Name});
+    sizY = tmp.Datasets(movind).Dataspace.Size;
+    F_dark=0;
+    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
 else
     sizY = data.sizY;
     if ismember('F_dark',who(data))
@@ -105,12 +114,30 @@ if memmaped
     parfor i = 1:n_patches
         patch_idx = patch_to_indices(patches{i});
         Yp = data.Y(patch_idx{:},:);
-        RESULTS(i) = process_patch_object(Yp,F_dark, K, p, tau, options);
+        %%%%%%%%%%%%%%%%%%
+        F_dark_tmp = F_dark;
+        if F_dark_tmp == inf
+            F_dark_tmp = min(Yp(:));
+        end
+        %%%%%%%%%%%%%%%%%%%
+        RESULTS(i) = process_patch_object(Yp,F_dark_tmp, K, p, tau, options);
         fprintf(['Finished processing patch # ',num2str(i),' out of ',num2str(n_patches), '.\n']);
         RESULTS(i).Y = [];
         RESULTS(i).Yr = [];
     end
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% MP 3/21/18
+elseif h5
+    parfor i = 1:n_patches
+%     for i = 1:n_patches
+        ptch = patches{i};
+        Yp = single(h5read(data,'/mov',[ptch(1) ptch(3) 1],[(ptch(2)-ptch(1)+1) (ptch(4)-ptch(3)+1) sizY(end)]));
+        RESULTS(i) = process_patch_object(Yp,F_dark, K, p, tau, options);
+        fprintf(['Finished processing patch # ',num2str(i),' out of ',num2str(n_patches), '.\n']);
+        RESULTS(i).A
+        RESULTS(i).Y = [];
+        RESULTS(i).Yr = [];
+    end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 else  % avoid copying the entire dataset to each worker, for in-memory data
     for i = n_patches:-1:1
         patch_idx = patch_to_indices(patches{i});
@@ -150,7 +177,7 @@ for i = 1:n_patches
         if k > size(RESULTS(i).A,2)
             break;
         end
-        cnt = cnt + 1;
+        cnt = cnt + 1
         A(patch_lin_idx,cnt) = RESULTS(i).A(:,k);
     end
     B(patch_lin_idx,i) = RESULTS(i).b;
@@ -170,7 +197,7 @@ A = spdiags(1./MASK(:),0,d,d)*A;
 B = spdiags(1./MASK(:),0,d,d)*B;
 C = cell2mat({RESULTS(:).C}');
 S = cell2mat({RESULTS(:).S}');
-ff = find(sum(A,1)==0);
+ff = find(sum(A,1)==0)
 A(:,ff) = [];
 C(ff,:) = [];
 S(ff,:) = [];
@@ -376,6 +403,7 @@ function CNM = process_patch_object(Y,F_dark,K,p,tau,options)
                 'temporal_parallel',false,...
                 'spatial_parallel',false,...
                 'space_thresh',options.patch_space_thresh);
+%     F_dark
     Y = single(Y) - single(F_dark);
     Y(isnan(Y)) = single(F_dark);
     CNM.fit(Y,options,K);                

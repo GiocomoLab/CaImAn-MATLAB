@@ -52,7 +52,7 @@ if isa(Y,'char')
     elseif strcmpi(ext,'hdf5') || strcmpi(ext,'h5')
         filetype = 'hdf5';
         fileinfo = hdf5info(Y);
-        data_name = fileinfo.GroupHierarchy.Datasets.Name;
+        data_name = '/mov'; %fileinfo.GroupHierarchy.Datasets.Name; %%%%%%%%%%%%%%%%
         sizY = fileinfo.GroupHierarchy.Datasets.Dims;
         T = sizY(end);
     elseif strcmpi(ext,'raw')

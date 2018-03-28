@@ -37,6 +37,7 @@ if ~isfield(options,'time_thresh') || isempty(options.time_thresh); options.time
 if ~isfield(options,'MinPeakDist') || isempty(options.MinPeakDist); options.MinPeakDist = defoptions.MinPeakDist; end
 
 memmaped = isobject(Yr);
+h5 = ischar(Yr);
 
 [K_m,T] = size(C);
 pk = zeros(K_m,Np);
@@ -112,6 +113,55 @@ if memmaped
             rval_time(i) = NaN;
         end
     end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+elseif h5 
+    parfor i = 1:K_m
+        ovlp_cmp = find(tAA(:,i));
+        indeces = LOCS{i};
+        for j = 1:length(ovlp_cmp)
+            indeces = setdiff(indeces,LOCS{ovlp_cmp(j)});
+        end
+        a_temp = reshape(A(:,i),options.d1,options.d2*options.d3);
+        [rows,temp] = find(a_temp>0);
+        [cols,plns] = ind2sub([options.d2,options.d3],temp);
+        if options.d3 > 1
+            a_temp = reshape(full(A(:,i)),options.d1,options.d2,options.d3);
+            a_temp = a_temp(min(rows):max(rows),min(cols):max(cols),min(plns):max(plns));
+        else
+            a_temp = a_temp(min(rows):max(rows),min(cols):max(cols));
+        end
+
+        if options.d3 == 1
+            b_temp = reshape(b_rs(min(rows):max(rows),min(cols):max(cols),:),numel(a_temp),[]);
+        else
+            b_temp = reshape(b_rs(min(rows):max(rows),min(cols):max(cols),min(plns):max(plns),:),numel(a_temp),[]);
+        end
+        if ~isempty(indeces)
+            if options.d3 == 1
+                rcount = max(rows)-min(rows)+1; ccount = max(cols)-min(cols)+1;
+                indecescount = max(indeces)-min(indeces)+1;
+                yytemp = h5read(Yr,'/mov',[min(rows) min(cols) min(indeces)], [rcount ccount indecescount]);
+%                 yytemp = Yr.Y(min(rows):max(rows),min(cols):max(cols),min(indeces):max(indeces));
+                y_temp = yytemp(:,:,indeces-min(indeces)+1);
+            else
+                rcount = max(rows)-min(rows)+1; ccount = max(cols)-min(cols)+1;
+                indecescount = max(indeces)-min(indeces)+1; pcount = max(plns)-min(plns)+1;
+                yytemp = h5read(Yr,'/mov',[min(rows) min(cols) min(plns) min(indeces)],[rcount ccount pcount indecescount]);
+%                 yytemp = Yr.Y(min(rows):max(rows),min(cols):max(cols),min(plns):max(plns),min(indeces):max(indeces));
+                y_temp = yytemp(:,:,:,indeces-min(indeces)+1);
+            end
+            y_temp = reshape(y_temp,[],length(indeces));
+            mY_space = double(mean(y_temp,2) - b_temp*mean(f(:,indeces),2));
+            mY_time = double(mean(y_temp,1)-mean(b_temp,1)*f(:,indeces));
+            rval_space(i) = corr(full(a_temp(:)),mY_space);
+            rval_time(i) = corr(C(i,indeces)',mY_time');
+        else
+            rval_space(i) = NaN;
+            rval_time(i) = NaN;
+        end
+    end
+    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 else
     parfor i = 1:K_m
         ovlp_cmp = find(tAA(:,i));
