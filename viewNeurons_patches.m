@@ -95,7 +95,7 @@ while and(m>=1, m<=length(ind))
     
     %% zoomed-in view
     subplot(3,3,6);
-    imagesc(reshape(A(:, ind(m)), options.d1, options.d2));
+    imagesc(reshape(A(:, ind(m))/max(A(:,ind(m))), options.d1, options.d2));
     axis equal; axis off;
     x0 = ctr(ind(m), 2);
     y0 = ctr(ind(m), 1);
@@ -162,19 +162,19 @@ while and(m>=1, m<=length(ind))
                subplot(3,3,7:9);
                fprintf('select timepoints to make gif\n');
                [xrange, ~]= ginput(2);
-               xrange=sort(round(xrange));
+               xrange=sort(round(xrange*options.fr));
                
-               while 1
-                   tt = xrange(2)-xrange(1)+1;
-                   gif = reshape(A*C(:,xrange(1):xrange(2)) + b*f(:,xrange(1):xrange(2)),...
-                       options.d1,options.d2,tt);
+               
+               tt = xrange(2)-xrange(1)+1;
+               gif = reshape(A*C(:,xrange(1):xrange(2)) + b*f(:,xrange(1):xrange(2)),...
+                   options.d1,options.d2,tt);
 %                    gif([1:round(max([x0-gSiz*2 1])), round(min([x0+gSiz*2,options.d1])):end],:) = 0;
 %                    gif(:,[1:round(max([y0-gSiz*2 1])), round(min([y0+gSiz*2,options.d2])):end])=0;
-%                    
+                while 1
                    Cmax = full(max(cell_ts));
-                   subplot(3,3,7:9); tp1=plot([xrange(1) xrange(1)],[0 Cmax],'r');
-                   tp2 = plot([xrange(2) xrange(2)],[0 Cmax],'r');
-                   indLine = plot([xrange(1), xrange(1)],...
+                   subplot(3,3,7:9); tp1=plot([t(xrange(1)) t(xrange(1))],[0 Cmax],'r');
+                   tp2 = plot([t(xrange(2)) t(xrange(2))],[0 Cmax],'r');
+                   indLine = plot([t(xrange(1)), t(xrange(1))],...
                                 [0 Cmax],'k');
 %                    gline = animatedline('MaximumNumPoints',tt);
                    
@@ -183,21 +183,23 @@ while and(m>=1, m<=length(ind))
                        delete(tp1); delete(tp2); delete(indLine);
                        break
                    else
-                       for i = 1:tt
-                            subplot(3,3,3);
-                            imagesc(gif(:,:,i)); hold on; axis equal; axis off;
-                            [~,ww] = contour(x_cont,y_cont,'LineColor','k');
-                            ww.LineWidth = 2; 
-                            xlim(x0+[-gSiz, gSiz]*2);
-                            ylim(y0+[-gSiz, gSiz]*2); 
+                       subplot(3,3,3);
+                       gifhandle=imagesc(gif(:,:,1)); hold on; axis equal; axis off;
+                       [~,ww] = contour(x_cont,y_cont,'LineColor','k');
+                       ww.LineWidth = 2; 
+                       xlim(x0+[-gSiz, gSiz]*2);
+                       ylim(y0+[-gSiz, gSiz]*2); 
                             
-                            drawnow;  hold off;
+                       drawnow;  hold off;
+                       for i = 1:tt
+                           subplot(3,3,3);
+                            set(gifhandle,'CData',gif(:,:,i)); drawnow;
                             
                             subplot(3,3,7:9); delete(indLine);
 %                             addpoints(gline,Cmax,t(xrange(1)+i-1));
-                            dt = (xrange(2)-xrange(1))/tt;
-                            indLine = plot([xrange(1)+(i-1)*dt, xrange(1)+dt*(i -1)],...
-                                [0 Cmax],'k');
+%                             dt = (xrange(2)-xrange(1))/tt;
+                            indLine = plot([t(xrange(1)+(i-1)), t(xrange(1)+(i -1))],...
+                                [0 Cmax],'k'); drawnow;
 
                             
                        end
@@ -216,8 +218,8 @@ while and(m>=1, m<=length(ind))
         end
     end
 end
-A_new = A;
-C_new = C;
+A_new = A(:,~ind_del);
+C_new = C(~ind_del,:);
 % if save_img
 %     cd(cur_cd);
 % else
