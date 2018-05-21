@@ -36,7 +36,13 @@ end
 
 [rval_space,rval_time,ind_space,ind_time] = classify_comp_corr(Y,A,C,b,f,options);
 traces = detrend_df_f(A,b,C,f,YrA,options);
-max_pr = trace_fit_extreme(full(traces),fr,t_int,sn_fac);
+
+try
+    max_pr = trace_fit_extreme(full(traces),fr,t_int,sn_fac);
+catch 
+    max_pr = -Inf;
+    
+end
 %fitness = compute_event_exceptionality(traces,0);
 %fitness_delta = compute_event_exceptionality(diff(traces,[],2),0);
 

@@ -27,7 +27,12 @@ if ~isfield(options,'df_window') || isempty(options.df_window)
     options.df_window = defoptions.df_window;
 end
 
-F = diag(sum(A.^2))*(C + YrA);                                                     % fluorescence
+if isempty(YrA)
+    F = diag(sum(A.^2))*C;
+else
+    F = diag(sum(A.^2))*(C + YrA);                                                     % fluorescence
+end
+
 if isempty(options.df_window) || (options.df_window > size(C,2))
     Fd = prctile(F,options.df_prctile,2);
     F0 = repmat(prctile((A'*b)*f,options.df_prctile,2) + Fd,1,size(C,2));

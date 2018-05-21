@@ -53,7 +53,7 @@ end
 
 %% start viewing neurons
 figure('position', [100, 100, 1024, 512]);
-m=1;
+m=1; maxInd = length(ind);
 while and(m>=1, m<=length(ind))
     %% full-frame view
     subplot(3,3,[1 2 4 5]); thr = .95;
@@ -74,7 +74,7 @@ while and(m>=1, m<=length(ind))
     end
 %     imagesc(reshape(A(:, ind(m)), options.d1, options.d2)); 
     
-    axis equal; axis off;
+    axis equal; axis off; hold off;
     if ind_del(m)
         title(sprintf('Neuron %d', ind(m)), 'color', 'r');
     else
@@ -82,19 +82,19 @@ while and(m>=1, m<=length(ind))
     end
     %% zoomed in with background
     subplot(3,3,3);
-    imagesc(bkgnd);
-    axis equal; axis off;
-    x0 = ctr(ind(m), 2);
-    y0 = ctr(ind(m), 1); 
-    hold on;
-    [~,ww] = contour(x_cont,y_cont,'LineColor','k');
-    ww.LineWidth = 2;
-    xlim(x0+[-gSiz, gSiz]*2);
-    ylim(y0+[-gSiz, gSiz]*2);
+%     imagesc(bkgnd);
+%     axis equal; axis off;
+%     x0 = ctr(ind(m), 2);
+%     y0 = ctr(ind(m), 1); 
+%     hold on;
+%     [~,ww] = contour(x_cont,y_cont,'LineColor','k');
+%     ww.LineWidth = 2;
+%     xlim(x0+[-gSiz, gSiz]*2);
+%     ylim(y0+[-gSiz, gSiz]*2); hold off;
     
     
     %% zoomed-in view
-    subplot(3,3,6);
+    subplot(3,3,6); 
     imagesc(reshape(A(:, ind(m))/max(A(:,ind(m))), options.d1, options.d2));
     axis equal; axis off;
     x0 = ctr(ind(m), 2);
@@ -104,13 +104,13 @@ while and(m>=1, m<=length(ind))
     
     
     %% temporal components
-    subplot(3,3,7:9);cla;
+    subplot(3,3,7:9);cla;hold off;
     if ~isempty(C2)
         plot(t, C2(ind(m), :)*max(A(:, ind(m))), 'linewidth', 2); hold on;
         plot(t, C(ind(m), :)*max(A(:, ind(m))), 'r');
     else
         cell_ts =  C(ind(m), :)*max(A(:, ind(m)));
-        plot(t, cell_ts); hold on;
+        plot(t, cell_ts); %hold on;
     end
     xlabel(str_xlabel);
     
@@ -119,7 +119,7 @@ while and(m>=1, m<=length(ind))
         saveas(gcf, sprintf('neuron_%d.png', ind(m)));
         m = m+1;
     else
-        fprintf('Neuron %d, keep(k, default)/delete(d)/split(s)/trim(t)/gif (g)/delete all(da)/backward(b)/end(e):    ', ind(m));
+        fprintf('Neuron %d of %d, keep(k, default)/delete(d)/split(s)/trim(t)/gif (g)/delete all(da)/backward(b)/end(e):    ', size(C,1), ind(m));
         temp = input('', 's');
         if temp=='d'
             ind_del(m) = true;
@@ -141,6 +141,7 @@ while and(m>=1, m<=length(ind))
                 A(:, end+1) = tmpA.*tmp_ind(:);
                 C(end+1, :) = C(ind(m), :);
                 A(:, ind(m)) = tmpA.*(1-tmp_ind(:));
+                maxInd = maxInd+1;
 %                 S(end+1, :) = S(ind(m), :);
 %                 C_raw(end+1, :) = C_raw(ind(m), :);
 %                 P.kernel_pars(end+1, :) = P.kernel_pars(ind(m), :);
@@ -159,7 +160,7 @@ while and(m>=1, m<=length(ind))
             
         elseif strcmpi(temp,'g')
             try
-               subplot(3,3,7:9);
+               subplot(3,3,7:9); hold on;
                fprintf('select timepoints to make gif\n');
                [xrange, ~]= ginput(2);
                xrange=sort(round(xrange*options.fr));

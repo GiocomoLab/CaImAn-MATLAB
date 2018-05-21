@@ -128,12 +128,13 @@ if memmaped
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% MP 3/21/18
 elseif h5
     parfor i = 1:n_patches
+%     for i = 336:338
 %     for i = 1:n_patches
         ptch = patches{i};
         Yp = single(h5read(data,'/mov',[ptch(1) ptch(3) 1],[(ptch(2)-ptch(1)+1) (ptch(4)-ptch(3)+1) sizY(end)]));
         RESULTS(i) = process_patch_object(Yp,F_dark, K, p, tau, options);
         fprintf(['Finished processing patch # ',num2str(i),' out of ',num2str(n_patches), '.\n']);
-        RESULTS(i).A
+        RESULTS(i).A;
         RESULTS(i).Y = [];
         RESULTS(i).Yr = [];
     end
@@ -177,11 +178,15 @@ for i = 1:n_patches
         if k > size(RESULTS(i).A,2)
             break;
         end
-        cnt = cnt + 1
+        cnt = cnt + 1;
         A(patch_lin_idx,cnt) = RESULTS(i).A(:,k);
     end
+    
+    
     B(patch_lin_idx,i) = RESULTS(i).b;
     MASK(patch_lin_idx) = MASK(patch_lin_idx) + 1;
+    
+    
     P.sn(patch_lin_idx) = reshape(RESULTS(i).P.sn,patch_size);
     if isfield(RESULTS(i).P,'sn_ds')
         P.sn_ds(patch_lin_idx) = reshape(RESULTS(i).P.sn_ds,patch_size);
@@ -197,7 +202,7 @@ A = spdiags(1./MASK(:),0,d,d)*A;
 B = spdiags(1./MASK(:),0,d,d)*B;
 C = cell2mat({RESULTS(:).C}');
 S = cell2mat({RESULTS(:).S}');
-ff = find(sum(A,1)==0)
+ff = find(sum(A,1)==0);
 A(:,ff) = [];
 C(ff,:) = [];
 S(ff,:) = [];

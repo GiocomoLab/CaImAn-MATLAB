@@ -79,6 +79,7 @@ a=dct1d(initial_data); % discrete cosine transform of initial data
 % now compute the optimal bandwidth^2 using the referenced method
 I=[1:n-1]'.^2; a2=(a(2:end)/2).^2;
 % use  fzero to solve the equation t=zeta*gamma^[5](t)
+
 t_star=root(@(t)fixed_point(t,N,I,a2),N);
 % smooth the discrete cosine transform of initial data using t_star
 a_t=a.*exp(-[0:n-1]'.^2*pi^2*t_star/2);
@@ -111,7 +112,12 @@ l=7;
 f=2*pi^(2*l)*sum(I.^l.*a2.*exp(-I*pi^2*t));
 for s=l-1:-1:2
     K0=prod([1:2:2*s-1])/sqrt(2*pi);  const=(1+(1/2)^(s+1/2))/3;
+    
+    
+    
     time=(2*const*K0/N/f)^(2/(3+2*s));
+    
+    
     f=2*pi^(2*s)*sum(I.^s.*a2.*exp(-I*pi^2*time));
 end
 out=t-(2*N*sqrt(pi)*f)^(-2/5);

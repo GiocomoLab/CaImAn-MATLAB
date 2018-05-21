@@ -252,8 +252,19 @@ classdef CNMF < handle
         
         %% evaluate components
         function evaluateComponents(obj)
-            [obj.rval_space,obj.rval_time,obj.max_pr,obj.sizeA,obj.keep_eval] = classify_components(...
-                obj.Y,obj.A,obj.C,obj.b,obj.f,obj.R,obj.options);
+%             try
+                [obj.rval_space,obj.rval_time,obj.max_pr,obj.sizeA,obj.keep_eval] = classify_components(...
+                    obj.Y,obj.A,obj.C,obj.b,obj.f,obj.R,obj.options);
+%             catch ME
+%                 size(obj.Y)
+%                 size(obj.A)
+%                 size(obj.C)
+%                 size(obj.b)
+%                 size(obj.f)
+%                 size(obj.R)
+%                 rethrow(ME)
+%             end
+                
         end
 
         %% keep components
